@@ -24,7 +24,7 @@ You need **Windows 10 (1809 or newer) or Windows 11** and **Node.js 18.15 or new
 **Option 2: terminal**
 
 ```powershell
-git clone https://github.com/<you>/rigwatch.git
+git clone https://github.com/firas44/rigwatch.git
 cd rigwatch
 node server.js
 ```
