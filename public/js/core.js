@@ -59,6 +59,8 @@ const P = {
   stop: 'M6 6h12v12H6z', zap: 'M13 2L4 14h7l-1 8 9-12h-7z', cpu: 'M7 7h10v10H7zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4', gpu: 'M2 7h20v10H2zM6 17v3M10 17v3M7 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0M15 12h3',
   disk: 'M4 5h16v14H4zM4 13h16M16 16h.01', box: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9', terminal: 'M4 5h16v14H4zM7 9l3 3-3 3M12 15h5', wifi: 'M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01',
   layers: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5', eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7', drag: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0', target: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM12 11.2a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6z', file: 'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',
+  clipboard: 'M9 3h6v3H9zM8 4.5H5V21h14V4.5h-3M9 13l2 2 4-4', book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7',
   radar: 'M12 3a9 9 0 1 0 9 9M12 7a5 5 0 1 0 5 5M12 12l7-7', wrench: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z', ban: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.6l12.8 12.8', key: 'M15 7a4 4 0 1 1-3.9 5H4v3h3v3h3v-3h1.1A4 4 0 0 1 15 7z', power: 'M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0', fire: 'M12 21c4 0 7-3 7-7 0-4-3-6-4-10-2 3-3 4-5 4 0-2-1-3-2-4-1 3-3 5-3 10 0 4 3 7 7 7z',
 };
 RW.icon = (n, cls) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"' + (cls ? ' class="' + cls + '"' : '') + ' aria-hidden="true"><path d="' + (P[n] || P.info) + '"/></svg>';
@@ -227,6 +229,7 @@ const tableHTML = (id, cols, rows, o = {}) => {
 RW.NAV = [
   ['Monitor', [['dashboard', 'Dashboard', 'grid'], ['performance', 'Performance', 'activity'], ['processes', 'Processes', 'list'], ['sensors', 'Sensors', 'thermo']]],
   ['Network', [['network', 'Network', 'globe'], ['security', 'Security', 'shield'], ['lab', 'Net Lab', 'flask']]],
+  ['SIEM', [['siem', 'Security center', 'target'], ['siem-hunt', 'Threat hunting', 'search'], ['siem-mitre', 'MITRE ATT&CK', 'layers'], ['siem-auth', 'Authentication', 'user'], ['siem-network', 'Network & IPs', 'radar'], ['siem-fim', 'Integrity', 'file'], ['siem-sca', 'Configuration', 'clipboard'], ['siem-compliance', 'Compliance', 'book']]],
   ['Build', [['dev', 'Dev & Containers', 'code'], ['services', 'Services & Startup', 'cog']]],
   ['Ops', [['toolbox', 'Toolbox', 'wrench'], ['alerts', 'Alerts', 'bell'], ['timeline', 'Timeline', 'clock'], ['system', 'System', 'info']]],
 ];
@@ -256,7 +259,7 @@ RW.renderNav = () => {
 RW.renderTopActions = () => {
   const P = RW.pages[RW.page] || {};
   let h = '';
-  if (P.ranges) h += '<div class="seg" id="rangeSeg">' + ['15m', '1h', '6h', '24h', '7d'].map(r => '<button data-range="' + r + '" class="' + (RW.prefs.range === r ? 'on' : '') + '">' + r + '</button>').join('') + '</div>';
+  if (P.ranges) h += '<div class="seg" id="rangeSeg">' + ['15m', '1h', '6h', '24h', '7d', '30d', '90d', '1y'].map(r => '<button data-range="' + r + '" class="' + (RW.prefs.range === r ? 'on' : '') + '">' + r + '</button>').join('') + '</div>';
   if (P.topExtra) h += P.topExtra();
   h += '<button class="icon-btn' + (RW.paused ? ' on' : '') + '" data-cmd="pause" title="' + (RW.paused ? 'Resume' : 'Pause') + ' live updates (P)">' + RW.icon(RW.paused ? 'play' : 'pause') + '</button>';
   h += '<button class="icon-btn" data-cmd="theme" title="Toggle theme (T)">' + RW.icon(RW.prefs.theme === 'dark' ? 'sun' : 'moon') + '</button>';
@@ -352,6 +355,7 @@ RW.connect = () => {
     if (j.lines.length > 5000) j.lines.splice(0, 1000);
     RW.emit('job', m.id);
   });
+  es.addEventListener('siem', e => { try { RW.emit('siem', JSON.parse(e.data)); } catch { /* ignore */ } });
   es.addEventListener('alert', e => {
     for (const a of JSON.parse(e.data)) {
       RW.toast(a.msg, 'warn', 9000);

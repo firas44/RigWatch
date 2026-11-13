@@ -1,6 +1,6 @@
 # RigWatch
 
-**Your whole PC on one page.** CPU, GPU, temperatures, fans, FPS, every process, every port and connection, a security audit, a network lab, Docker, your dev servers and a toolbox of Windows power tools, live in your browser.
+**Your whole PC on one page.** CPU, GPU, temperatures, fans, FPS, every process, every port and connection, a Wazuh-style SIEM with a year of security history, a network lab, Docker, your dev servers and a toolbox of Windows power tools, live in your browser.
 
 One `node server.js`. No dependencies, no install step, no account, nothing leaves your machine.
 
@@ -50,7 +50,7 @@ Nothing else to configure.
 | Page | |
 |---|---|
 | **Dashboard** | 21 widgets you can drag, resize, add and remove: KPIs, CPU per thread, GPU engines, memory breakdown, network, disk, top apps, security score, FPS, temperatures, latency, dev servers, open ports, live timeline, per-thread heatmap, containers, storage, battery |
-| **Performance** | Every metric over 15 min / 1 h / 6 h / 24 h / 7 days (history survives restarts), CSV export |
+| **Performance** | Every metric over 15 min / 1 h / 6 h / 24 h / 7 / 30 / 90 days / 1 year (history survives restarts), CSV export |
 | **Processes** | Table, tree and by-app views; search with `port:3000`, `pid:123`, `kind:dev`, `user:root`. Click a process for live charts, full command line, parent/children, company/version, loaded DLLs, and **end / end tree / suspend / resume / priority / CPU affinity / open location / SHA-256 + VirusTotal / free its ports / block its network** |
 | **Sensors** | Live graphs for every temperature, fan, power rail, clock, voltage, DIMM and NVMe sensor; click any sensor to zoom |
 | **Network** | Adapters (IP, MAC, MTU, link, packets/s, errors), connections with reverse DNS, listening ports flagged *local only* or *all interfaces*, ARP neighbors, routes, DNS servers and cache, Wi-Fi, firewall profiles |
@@ -65,6 +65,30 @@ Nothing else to configure.
 | **/overlay** | Compact transparent readout for OBS or a second screen: `/overlay?items=fps,cpu,gpu,ram,ping&bg=clear&scale=1.5` |
 
 **Every table has a Table / Chart / Both switch.** Numbers become ranked bars, categories become "count by" bars, dates become a timeline histogram. Your choice is remembered per table.
+
+## SIEM: a security center for one machine
+
+A Wazuh-style security center, built in, with no agents or servers to set up. Every security-relevant event gets a rule ID, a **level from 0 to 15**, groups, **MITRE ATT&CK** techniques and **PCI DSS / GDPR / NIST 800-53 / HIPAA** tags, and is kept for a year.
+
+| Module | |
+|---|---|
+| **Security center** | Severity KPIs, alert level evolution, alerts by severity, every module as a card with its own counts and trend, top rules / addresses / techniques, latest high alerts, data-source health |
+| **Threat hunting** | Search with `ip:` `user:` `rule:` `group:` `mitre:` `proc:` `level>=7` and free text; field facets to drill in with one click; histogram; expandable events with every field, the raw JSON and actions (block the IP, same rule, copy). CSV / JSON export |
+| **MITRE ATT&CK** | Tactics × techniques matrix as a heat map, tactic counts, click a technique for its events |
+| **Authentication** | Sign-ins vs failures over time, logon types, failure reasons, top users and sources, day × hour heat map. Signed-in sessions with **Disconnect / Sign out**, local accounts (admin, disabled, last sign-in), SMB clients, and a "who was signed in when" timeline |
+| **Network & IPs** | Every remote address of the last year as a card: scope, reverse DNS, apps, connections in/out, failed logons, dropped packets, threat-feed hits. Inbound connections from the internet, port scans (from the firewall drop log), one-click **block**, AbuseIPDB / VirusTotal links |
+| **Malware detection** | Defender detections and actions, Defender switched off or exclusions added, suspicious processes (fake system names, temp folders, tampered binaries), programs that ran for the first time, threat-feed hits |
+| **Integrity monitoring** | Hosts file, startup folders, scheduled tasks, SSH keys, autostart registry keys (Run/RunOnce, Winlogon, debugger hijacks); `/etc` essentials on Linux, LaunchAgents on macOS. Add your own folders |
+| **Configuration assessment** | A CIS-inspired hardening benchmark (26 checks on Windows: firewall, antivirus, UAC, RDP/NLA, SMBv1, SMB signing, accounts, password policy, BitLocker, Secure Boot, updates, LLMNR, WDigest, LSA protection, PowerShell 2.0 and logging, exposed ports…) with a score, the reason and the fix for each, and a daily score history |
+| **System auditing** | Accounts created/deleted/added to Administrators, new services and drivers, scheduled tasks, cleared logs, audit-policy and firewall-rule changes, boots and crashes, every action taken in RigWatch |
+| **Active response** | Block / unblock IPs and ranges (Windows Firewall rules, iptables on Linux) for an hour, a day, a week or forever. Optional **automatic blocking** of brute force, port scans and threat-feed hits. Trusted addresses, notification level, threat feeds, firewall drop logging |
+| **Regulatory compliance** | PCI DSS, GDPR, NIST 800-53 and HIPAA requirement tiles with event counts |
+
+**What feeds it.** Windows: the Security log (sign-ins, failures, lockouts, account and group changes, cleared logs, audit policy, services, tasks, RDP reconnects), System (services, boots, crashes), Defender, Windows Firewall, Remote Desktop and OpenSSH logs, read incrementally with bookmarks; the first start loads the last 30 days. Linux: journald or `/var/log/auth.log` (sshd, sudo, logins). Everywhere: connections and listening ports, new programs, file integrity, configuration checks and RigWatch's own alerts. Correlation rules add brute-force (5 failures in 2 minutes), success after failures, first logon from a new address and logons from the internet.
+
+**Light on disk.** One JSON-lines file per day in `~/.rigwatch/siem/events/`, older days gzipped, everything past **365 days** deleted, capped at 256 MB. A typical desktop uses a few MB per month. Plain JSON: `grep`, `jq` or import it anywhere.
+
+> Windows only lets administrators read the Security log, see other users' sessions and add firewall rules. Without admin the SIEM still records network, programs, files, configuration, Defender and firewall-rule events, and shows a **Restart as admin** button.
 
 Ctrl+K opens a command palette (pages, processes, ports, PIDs, actions). `1`–`9` switch pages, `/` searches processes, `P` pauses, `T` toggles the theme, `E` customizes the dashboard.
 
@@ -104,6 +128,8 @@ All optional, as environment variables:
 | `RIGWATCH_HOME` | `~/.rigwatch` | settings, token, history, timeline |
 | `RIGWATCH_TOOLS` | `./tools` | where helpers live |
 | `NO_PERSIST` | `0` | `1` keeps nothing on disk |
+| `RETENTION_DAYS` | `365` | days of SIEM history to keep |
+| `SIEM_MAX_MB` | `256` | disk cap for SIEM history (oldest days go first) |
 | `--open` | | open the browser on start |
 
 ```powershell
@@ -116,7 +142,8 @@ $env:HOST="0.0.0.0"; node server.js          # PowerShell
 - `Host` header checks block DNS rebinding; every action needs a custom header and same-origin request (CSRF protection); strict Content-Security-Policy.
 - Kill / suspend / priority refuse core OS processes, RigWatch itself and the terminal running it. Every action lands in the timeline.
 - Secrets in command lines (`--token=…`, `password=…`, `user:pass@`) are masked; Docker environment values and secret-looking environment variables are never shown.
-- Network traffic happens only for: the helper downloads (GitHub), the latency probe (`PING_TARGET`), and tools you run yourself (public IP via ipify, DNS benchmark, your webhooks).
+- Network traffic happens only for: the helper downloads (GitHub), the latency probe (`PING_TARGET`), tools you run yourself (public IP via ipify, DNS benchmark, your webhooks), and, only if you turn it on, a daily download of the FireHOL and abuse.ch threat lists (nothing about you is sent; matching happens locally).
+- Automatic blocking is off by default. When on, it only blocks public addresses (LAN optional) and never this machine, the gateway, DNS servers or your trusted list.
 - The port scanner and LAN discovery are for networks you own or are allowed to test.
 - RigWatch runs elevated on Windows so it can read CPU sensors, capture frames and manage services. Prefer least privilege? Use `--no-elevate`.
 
@@ -132,13 +159,16 @@ $env:HOST="0.0.0.0"; node server.js          # PowerShell
 | Helper download failed (offline, proxy, GitHub blocked) | RigWatch runs without it. Put `LibreHardwareMonitor/` and `PresentMon-*.exe` into `tools/` yourself, or set `NO_DOWNLOAD=1` |
 | Company-managed PC | Locked-down PowerShell can block some collectors; RigWatch falls back to basic CPU and memory and shows which collector failed under System → Collectors |
 | Antivirus flags something | RigWatch only uses built-in Windows tools and the two official helpers; check the hashes in `lib/tools.js` |
+| SIEM shows no sign-ins | The Windows Security log needs admin: click **Restart as admin** |
+| Port scans never show up | Turn on **Firewall drop log** in SIEM → Active response (admin) |
 | Anything else | System → Collectors → **Copy diagnostics**, then open an issue and paste it |
 
 ## Uninstall
 
 1. Stop RigWatch (Ctrl+C) and delete its folder.
-2. Delete `%USERPROFILE%\.rigwatch` (settings, history, timeline).
+2. Delete `%USERPROFILE%\.rigwatch` (settings, history, timeline, SIEM events).
 3. If you enabled CPU sensors: Settings → Apps → uninstall **PawnIO**.
+4. If you blocked addresses or programs: unblock them in RigWatch first, or remove the firewall rule groups **RigWatch IP** and **RigWatch** (`Get-NetFirewallRule -Group "RigWatch IP" | Remove-NetFirewallRule`). If you turned on firewall drop logging, turn it off in SIEM → Active response.
 
 RigWatch installs no services and changes nothing else on your system on its own.
 
@@ -158,6 +188,8 @@ Everything on screen is JSON: build your own overlay, Stream Deck button or bot.
 | `POST /api/action` | `{"type":"proc.kill","pid":123,"tree":true}` and `proc.suspend`, `proc.resume`, `proc.priority`, `proc.affinity`, `proc.hash`, `port.kill`, `service`, `docker`, `wsl` |
 | `POST /api/jobs` | `{"tool":"scan","params":{"target":"192.168.1.0/24","ports":"top"}}` |
 | `GET /api/diagnostics` | versions and collector health for bug reports |
+| `GET /api/siem/overview?range=7d` · `/facets?module=auth` · `/events?q=level>=10&before=` · `/ips` · `/ip?ip=` · `/sessions` · `/sca` · `/fim` · `/rules` · `/export?format=csv` | SIEM data (`range`: `24h`, `7d`, `30d`, `90d`, `365d`) |
+| `POST /api/siem/block` · `/unblock` · `/session` · `/sca/run` · `/fim/scan`, `PUT /api/siem/settings` | SIEM actions |
 
 Mutating calls need the header `x-rigwatch: 1` (plus the token cookie or `x-rigwatch-token` from other machines).
 
@@ -170,7 +202,9 @@ lib/engine.js        builds one snapshot per interval from every collector
 lib/platform/        win.js (+ ps/*.ps1), linux.js, darwin.js: same contract (see platform/index.js)
 lib/tools.js         pinned, hash-verified helper downloads   lib/elevate.js   UAC relaunch + console mirroring
 lib/security.js      exposure audit        lib/timeline.js   change detection + audit log
-lib/alerts.js        rules + webhooks      lib/history.js    1 s / 10 s / 1 min tiers on disk
+lib/alerts.js        rules + webhooks      lib/history.js    1 s / 10 s / 1 min / 1 h tiers on disk
+lib/siem/            rules.js (levels, MITRE, compliance, correlation), store.js (daily JSON, gzip, retention),
+                     collect.js (event logs, firewall log, journald), ips.js, blocks.js, sessions.js, sca.js, fim.js
 lib/nettools.js      Net Lab               lib/toolbox.js    Toolbox
 lib/docker.js        Docker Engine API     lib/dev.js        health checks, projects, toolchain
 public/              the UI: vanilla JS, canvas charts, no CDN, works offline
@@ -182,7 +216,7 @@ On Windows, long-lived PowerShell processes stream perf counters, WMI data and L
 ## Contributing
 
 ```bash
-npm test          # parser unit tests (Linux/macOS fixtures run on any OS)
+npm test          # parser + SIEM unit tests (Linux/macOS fixtures run on any OS)
 npm run build     # rebuild dist/rigwatch.js
 node server.js --no-elevate   # quick local run without the UAC prompt
 ```
