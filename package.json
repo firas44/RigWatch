@@ -1,0 +1,48 @@
+{
+  "name": "rigwatch",
+  "version": "2.0.0",
+  "description": "Your whole machine on one page: CPU, GPU, temps, FPS, processes, ports, connections, security audit, network lab, Docker and dev servers. Zero dependencies, Windows / Linux / macOS.",
+  "main": "server.js",
+  "bin": {
+    "rigwatch": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "open": "node server.js --open",
+    "test": "node --test test/",
+    "build": "node scripts/build.js",
+    "check": "node --test test/ && node scripts/build.js"
+  },
+  "files": [
+    "server.js",
+    "RigWatch.cmd",
+    "dist/",
+    "lib/",
+    "public/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.15"
+  },
+  "keywords": [
+    "system-monitor",
+    "hardware-monitor",
+    "task-manager",
+    "dashboard",
+    "gpu",
+    "fps",
+    "network",
+    "netstat",
+    "port-scanner",
+    "security",
+    "docker",
+    "devtools",
+    "zero-dependency",
+    "windows",
+    "linux",
+    "macos"
+  ],
+  "license": "MIT"
+}

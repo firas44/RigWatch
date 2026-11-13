@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>RigWatch</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--panel3)"/><path d="M4 18h6l3-8 5 14 3-6h7" fill="none" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>RigWatch</span><small id="ver"></small>
+    </div>
+    <nav class="nav" id="nav" aria-label="Pages"></nav>
+    <div class="side-foot" id="sideFoot"></div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <button class="icon-btn" id="sideToggle" title="Toggle sidebar ([)" aria-label="Toggle sidebar"></button>
+      <div class="crumb"><h1 id="pageTitle">RigWatch</h1><span class="muted" id="pageSub"></span></div>
+      <div class="spacer"></div>
+      <button class="search-btn" id="paletteBtn" title="Command palette"><span class="ico"></span><span class="txt">Search, jump, or run a command</span><kbd>Ctrl K</kbd></button>
+      <div class="top-actions" id="topActions"></div>
+    </header>
+    <div id="banner"></div>
+    <main class="page" id="page"></main>
+    <footer class="status" id="status"></footer>
+  </div>
+</div>
+<aside class="drawer" id="drawer" hidden aria-label="Details">
+  <header><h2 id="drawerTitle"></h2><span class="spacer"></span><button class="icon-btn" id="drawerClose" title="Close (Esc)" aria-label="Close"></button></header>
+  <div class="db" id="drawerBody"></div>
+</aside>
+<div id="modalRoot"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="tip hidden" id="tip"></div>
+<script src="/assets/js/core.js"></script>
+<script src="/assets/js/charts.js"></script>
+<script src="/assets/js/widgets.js"></script>
+<script src="/assets/js/pages-system.js"></script>
+<script src="/assets/js/pages-net.js"></script>
+<script src="/assets/js/pages-dev.js"></script>
+<script src="/assets/js/pages-tools.js"></script>
+<script src="/assets/js/boot.js"></script>
+</body>
+</html>

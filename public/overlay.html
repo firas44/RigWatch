@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RigWatch overlay</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; background: transparent; color: #f0efec; font: 600 15px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body.dark { background: #0a0b0d; }
+  #o { display: inline-flex; gap: 4px 14px; padding: 8px 12px; border-radius: 12px; background: rgba(10, 11, 13, .62); flex-wrap: wrap; transform-origin: top left; }
+  body.col #o { flex-direction: column; }
+  body.clear #o { background: transparent; text-shadow: 0 1px 3px #000, 0 0 2px #000; }
+  .i { display: inline-flex; gap: 6px; align-items: baseline; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .i b { color: #8db4ef; font-size: 11px; letter-spacing: .6px; font-weight: 700; }
+  .i small { color: #b9b7ae; font-weight: 500; font-size: 12px; }
+  .hot { color: #ff9b7a; } .crit { color: #ff6b6b; }
+  #help { position: fixed; bottom: 8px; left: 8px; font: 12px/1.5 system-ui; color: #b9b7ae; background: rgba(0,0,0,.6); padding: 8px 10px; border-radius: 8px; max-width: 560px; }
+</style>
+</head>
+<body>
+<div id="o">connecting&hellip;</div>
+<div id="help" hidden>Overlay options: <code>?items=fps,cpu,gpu,ram,vram,temp,net,ping,disk</code> &middot; <code>&amp;bg=clear|dark|glass</code> &middot; <code>&amp;layout=row|col</code> &middot; <code>&amp;scale=1.5</code>. Add this URL as an OBS Browser Source.</div>
+<script src="/assets/js/overlay.js"></script>
+</body>
+</html>
