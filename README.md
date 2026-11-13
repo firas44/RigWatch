@@ -4,7 +4,9 @@
 
 One `node server.js`. No dependencies, no install step, no account, nothing leaves your machine.
 
-![license MIT](https://img.shields.io/badge/license-MIT-blue) ![node 18+](https://img.shields.io/badge/node-%E2%89%A518.15-brightgreen) ![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey) ![dependencies 0](https://img.shields.io/badge/dependencies-0-success)
+![license MIT](https://img.shields.io/badge/license-MIT-blue) ![node 18+](https://img.shields.io/badge/node-%E2%89%A518.15-brightgreen) ![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey) ![dependencies 0](https://img.shields.io/badge/dependencies-0-success) ![SIEM](https://img.shields.io/badge/SIEM-MITRE%20ATT%26CK-b84a7a)
+
+**Website: [firas44.github.io/RigWatch](https://firas44.github.io/RigWatch/)** · [What's new in 2.1](CHANGELOG.md)
 
 ---
 
@@ -211,7 +213,7 @@ public/              the UI: vanilla JS, canvas charts, no CDN, works offline
 scripts/build.js     bundles everything into dist/rigwatch.js
 ```
 
-On Windows, long-lived PowerShell processes stream perf counters, WMI data and LibreHardwareMonitor sensors as tab-separated lines; another is started on demand for actions and Toolbox queries. Linux reads `/proc` and `/sys`; macOS uses built-in command-line tools. Typical cost on a 16-thread desktop: about 1% CPU and 400–500 MB of RAM (mostly the PowerShell hosts and the sensor library).
+On Windows, long-lived PowerShell processes stream perf counters, WMI data and LibreHardwareMonitor sensors as tab-separated lines; another is started on demand for actions and Toolbox queries. Linux reads `/proc` and `/sys`; macOS uses built-in command-line tools. Typical cost on a 16-thread desktop: about 1% CPU and 0.8–0.9 GB of RAM, mostly the four PowerShell helper processes (counters, inventory, actions and security logs, sensors).
 
 ## Contributing
 

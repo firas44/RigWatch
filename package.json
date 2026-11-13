@@ -1,7 +1,9 @@
 {
   "name": "rigwatch",
-  "version": "2.0.0",
-  "description": "Your whole machine on one page: CPU, GPU, temps, FPS, processes, ports, connections, security audit, network lab, Docker and dev servers. Zero dependencies, Windows / Linux / macOS.",
+  "version": "2.1.0",
+  "description": "Your whole machine on one page: CPU, GPU, temps, FPS, processes, ports, a Wazuh-style SIEM with a year of security history, network lab, Docker and dev servers. Zero dependencies, Windows / Linux / macOS.",
+  "homepage": "https://firas44.github.io/RigWatch/",
+  "repository": { "type": "git", "url": "https://github.com/firas44/RigWatch.git" },
   "main": "server.js",
   "bin": {
     "rigwatch": "server.js"
@@ -37,6 +39,10 @@
     "netstat",
     "port-scanner",
     "security",
+    "siem",
+    "mitre-attack",
+    "file-integrity-monitoring",
+    "intrusion-detection",
     "docker",
     "devtools",
     "zero-dependency",

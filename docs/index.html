@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RigWatch</title>
+<meta name="description" content="Your whole PC on one page: CPU, GPU, temperatures, FPS, processes, ports, a Wazuh-style SIEM with a year of security history, a network lab, Docker and dev servers. One node server.js, zero dependencies.">
+<meta property="og:title" content="RigWatch: your whole PC on one page">
+<meta property="og:description" content="System monitor + Wazuh-style SIEM for one machine. Zero dependencies, Windows / Linux / macOS.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg: #0a0b0d; --bg2: #0e0f12; --panel: #131418; --panel2: #191a1f; --panel3: #202128; --line: #23252c; --line2: #2e3038;
+  --ink: #eeece6; --ink2: #b9b7ae; --muted: #85837c; --faint: #5b5a55;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
+  --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b; --accent: #3987e5;
+  --r: 14px; --mono: ui-monospace, SFMono-Regular, Consolas, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f4f1; --bg2: #efefeb; --panel: #fcfcfb; --panel2: #f3f2ee; --panel3: #e9e8e2; --line: #e1e0d9; --line2: #d4d3cb;
+    --ink: #0b0b0b; --ink2: #52514e; --muted: #807e78; --faint: #a9a8a1;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948; --accent: #2a78d6;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+code, pre, .mono { font-family: var(--mono); }
+code { background: var(--panel3); padding: 1px 6px; border-radius: 6px; font-size: .9em; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* nav */
+nav.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+nav.top .wrap { display: flex; align-items: center; gap: 22px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 750; font-size: 17px; color: var(--ink); }
+.brand:hover { text-decoration: none; }
+.brand svg { width: 30px; height: 30px; }
+nav.top .links { display: flex; gap: 18px; margin-left: auto; align-items: center; }
+nav.top .links a { color: var(--ink2); font-size: 14px; }
+nav.top .links a:hover { color: var(--ink); text-decoration: none; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel); color: var(--ink); font-weight: 600; font-size: 14.5px; cursor: pointer; white-space: nowrap; }
+.btn:hover { text-decoration: none; border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.sm { padding: 6px 12px; font-size: 13px; }
+
+/* hero */
+.hero { padding: 72px 0 40px; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: -40% -10% auto; height: 640px; background: radial-gradient(ellipse at 30% 30%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%), radial-gradient(ellipse at 80% 10%, color-mix(in srgb, var(--s5) 14%, transparent), transparent 55%); pointer-events: none; }
+.hero .wrap { position: relative; }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line2); background: var(--panel); font-size: 13px; color: var(--ink2); }
+.pill b { color: var(--ink); }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1.04; margin: 18px 0 16px; letter-spacing: -1.5px; font-weight: 800; }
+h1 span { background: linear-gradient(90deg, var(--accent), var(--s7) 55%, var(--s5)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { font-size: clamp(16px, 2vw, 19px); color: var(--ink2); max-width: 760px; margin: 0 0 26px; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.cta .hint { color: var(--muted); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel2); color: var(--ink2); }
+.chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.chip.g i { background: var(--good); } .chip.w i { background: var(--warn); } .chip.c i { background: var(--crit); } .chip.b i { background: var(--s1); }
+
+/* app preview (illustration with sample data) */
+.shot { margin-top: 44px; border: 1px solid var(--line2); border-radius: 16px; background: var(--bg2); box-shadow: 0 30px 80px rgba(0,0,0,.35); overflow: hidden; }
+.shot .bar { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.shot .bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--panel3); }
+.shot .bar span { margin-left: 10px; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.app { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 460px; }
+.side { border-right: 1px solid var(--line); padding: 14px 10px; background: var(--panel); font-size: 13px; }
+.side h6 { margin: 12px 8px 6px; font-size: 10px; letter-spacing: .8px; color: var(--muted); text-transform: uppercase; }
+.side div { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; color: var(--ink2); }
+.side div.on { background: color-mix(in srgb, var(--accent) 16%, var(--panel)); color: var(--ink); font-weight: 600; }
+.side svg.i { width: 15px; height: 15px; }
+.main { padding: 16px; min-width: 0; }
+.mh { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.mh .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); color: var(--accent); }
+.mh b { font-size: 15px; } .mh small { display: block; color: var(--muted); font-size: 12px; }
+.mh .agent { margin-left: auto; display: flex; gap: 8px; font-size: 11.5px; color: var(--ink2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; align-items: center; }
+.kp { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.k { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.k small { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 650; }
+.k b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.k span { font-size: 10.5px; color: var(--ink2); }
+.row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }
+.cardx { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.cardx h4 { margin: 0 0 8px; font-size: 12px; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 10.5px; color: var(--ink2); margin-top: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; } .legend i { width: 8px; height: 8px; border-radius: 2px; }
+.donut { display: flex; align-items: center; gap: 10px; }
+.donut svg { width: 104px; height: 104px; flex: none; }
+.dl { font-size: 11px; display: grid; gap: 3px; flex: 1; }
+.dl div { display: flex; align-items: center; gap: 6px; } .dl i { width: 8px; height: 8px; border-radius: 2px; } .dl b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.ev { display: flex; gap: 8px; align-items: flex-start; padding: 7px 8px; border-left: 3px solid var(--c); background: linear-gradient(90deg, color-mix(in srgb, var(--c) 9%, transparent), transparent 45%); border-bottom: 1px solid var(--line); font-size: 12px; }
+.ev:last-child { border-bottom: 0; }
+.lv { min-width: 22px; height: 19px; border-radius: 5px; display: grid; place-items: center; font-weight: 700; font-size: 11px; background: color-mix(in srgb, var(--c) 26%, var(--panel)); }
+.ev b { display: block; } .ev span { color: var(--ink2); }
+.ev em { margin-left: auto; font-style: normal; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.caption { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+
+/* sections */
+section { padding: 72px 0; }
+section.alt { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.eyebrow { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
+h2 { font-size: clamp(28px, 4vw, 40px); margin: 8px 0 12px; letter-spacing: -.8px; line-height: 1.1; }
+.sub { color: var(--ink2); max-width: 760px; font-size: 16.5px; margin: 0 0 34px; }
+.stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+.stat b { display: block; font-size: 30px; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--ink2); font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.feat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; transition: border-color .15s, transform .15s; }
+.feat:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); transform: translateY(-2px); }
+.feat .fi { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in srgb, var(--c, var(--accent)) 16%, var(--panel)); color: var(--c, var(--accent)); margin-bottom: 12px; }
+.feat h3 { margin: 0 0 6px; font-size: 16.5px; }
+.feat p { margin: 0; color: var(--ink2); font-size: 14px; }
+.cat { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; font-weight: 700; margin: 30px 0 12px; }
+.mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.mod { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.mod h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 15px; }
+.mod h4 svg { color: var(--accent); }
+.mod p { margin: 0; color: var(--ink2); font-size: 13.5px; }
+.two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; margin-top: 30px; }
+.mtx { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+.mtx .h { font-size: 10.5px; font-weight: 700; background: var(--panel3); border-radius: 6px; padding: 6px; min-height: 40px; }
+.mtx .t { font-size: 10.5px; border-radius: 6px; padding: 5px 6px; border: 1px solid var(--line); background: var(--panel2); color: var(--ink2); min-height: 34px; }
+pre.q { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.7; margin: 0; }
+pre.q .c { color: var(--muted); }
+.comp { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.step .n { font-size: 12px; font-weight: 800; color: var(--accent); letter-spacing: 1px; }
+.step h3 { margin: 0; font-size: 17px; }
+.step p { margin: 0; color: var(--ink2); font-size: 14px; }
+pre.code { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13px; overflow-x: auto; margin: 0; }
+ol.first { margin: 26px 0 0; padding-left: 20px; color: var(--ink2); display: grid; gap: 8px; }
+ol.first b { color: var(--ink); }
+.os { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.osc { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; }
+.osc h3 { margin: 0 0 4px; } .osc .muted { color: var(--muted); font-size: 13px; }
+.osc ul { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 7px; font-size: 14px; }
+.osc li { display: flex; gap: 8px; align-items: flex-start; color: var(--ink2); }
+.osc li::before { content: ''; width: 16px; height: 16px; flex: none; margin-top: 2px; border-radius: 50%; background: color-mix(in srgb, var(--good) 25%, var(--panel)); box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 10px var(--good); }
+.osc li.part::before { box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 10px var(--warn); }
+.priv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pv { display: flex; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; }
+.pv svg { color: var(--good); margin-top: 2px; }
+.pv h3 { margin: 0 0 4px; font-size: 15.5px; } .pv p { margin: 0; color: var(--ink2); font-size: 14px; }
+details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 0 18px; margin-bottom: 10px; }
+summary { cursor: pointer; padding: 15px 0; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: '+'; color: var(--muted); font-size: 20px; line-height: 1; }
+details[open] summary::after { content: '–'; }
+details p { margin: 0 0 16px; color: var(--ink2); }
+footer { padding: 40px 0 60px; color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--line); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+footer .wrap > :last-child { margin-left: auto; }
+
+@media (max-width: 1000px) {
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid, .grid.four, .steps, .os { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .kp { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .app { grid-template-columns: minmax(0, 1fr); } .side { display: none; }
+}
+@media (max-width: 680px) {
+  .wrap { padding: 0 16px; }
+  nav.top .links a:not(.btn) { display: none; }
+  .hero { padding-top: 44px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid, .grid.four, .steps, .os, .priv { grid-template-columns: minmax(0, 1fr); }
+  .row { grid-template-columns: minmax(0, 1fr); }
+  .kp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mh .agent { display: none; }
+  .mtx { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  section { padding: 52px 0; }
+  footer .wrap > :last-child { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+  <symbol id="i-thermo" viewBox="0 0 24 24"><path d="M14 14.8V4a2 2 0 0 0-4 0v10.8a4 4 0 1 0 4 0z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.4-3 8-7 9-4-1-7-4.6-7-9V6z"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-4.3-4.3"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM12 11.2a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="M9 3h6v3H9zM8 4.5H5V21h14V4.5h-3M9 13l2 2 4-4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 21c4 0 7-3 7-7 0-4-3-6-4-10-2 3-3 4-5 4 0-2-1-3-2-4-1 3-3 5-3 10 0 4 3 7 7 7z"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.6l12.8 12.8"/></symbol>
+  <symbol id="i-radar" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9M12 7a5 5 0 1 0 5 5M12 12l7-7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path d="M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-gh" viewBox="0 0 24 24"><path d="M9 19c-4 1.5-4-2-6-2.5M15 21v-3.5a3 3 0 0 0-.9-2.4c3-.3 6-1.5 6-6.6a5.2 5.2 0 0 0-1.4-3.6 4.8 4.8 0 0 0-.1-3.6s-1.1-.3-3.6 1.4a12.4 12.4 0 0 0-6.5 0C6 1 4.9 1.3 4.9 1.3a4.8 4.8 0 0 0-.1 3.6A5.2 5.2 0 0 0 3.4 8.5c0 5.1 3 6.3 6 6.6a3 3 0 0 0-.9 2.4V21"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><path d="M7 7h10v10H7zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+</svg>
+
+<nav class="top"><div class="wrap">
+  <a class="brand" href="#"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--panel3)"/><path d="M4 18h6l3-8 5 14 3-6h7" fill="none" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>RigWatch</a>
+  <div class="links"><a href="#features">Features</a><a href="#siem">SIEM</a><a href="#install">Install</a><a href="#faq">FAQ</a><a class="btn sm" href="https://github.com/firas44/RigWatch"><svg class="i"><use href="#i-gh"/></svg>GitHub</a></div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="pill"><i></i><b>v2.1</b> adds a Wazuh-style SIEM with a year of security history</span>
+  <h1>Your whole PC<br><span>on one page.</span></h1>
+  <p class="lead">CPU, GPU, temperatures, FPS, every process, port and connection, a full security center with MITRE ATT&amp;CK, a network lab, Docker and your dev servers, live in your browser. One <code>node server.js</code>. No dependencies, no account, nothing leaves your machine.</p>
+  <div class="cta">
+    <a class="btn primary" href="https://github.com/firas44/RigWatch/archive/refs/heads/main.zip"><svg class="i"><use href="#i-download"/></svg>Download ZIP</a>
+    <a class="btn" href="https://github.com/firas44/RigWatch"><svg class="i"><use href="#i-gh"/></svg>View on GitHub</a>
+    <span class="hint">Extract, double-click <code>RigWatch.cmd</code>, done.</span>
+  </div>
+  <div class="chips"><span class="chip b"><i></i>Windows 10 / 11</span><span class="chip b"><i></i>Linux</span><span class="chip b"><i></i>macOS</span><span class="chip g"><i></i>Node.js 18.15+</span><span class="chip g"><i></i>0 dependencies</span><span class="chip"><i></i>MIT license</span></div>
+
+  <div class="shot" role="img" aria-label="Illustration of the RigWatch security center with sample data">
+    <div class="bar"><i></i><i></i><i></i><span>localhost:3000/#/siem</span></div>
+    <div class="app">
+      <aside class="side">
+        <h6>Monitor</h6><div><svg class="i"><use href="#i-grid"/></svg>Dashboard</div><div><svg class="i"><use href="#i-activity"/></svg>Performance</div><div><svg class="i"><use href="#i-list"/></svg>Processes</div><div><svg class="i"><use href="#i-thermo"/></svg>Sensors</div>
+        <h6>SIEM</h6><div class="on"><svg class="i"><use href="#i-target"/></svg>Security center</div><div><svg class="i"><use href="#i-search"/></svg>Threat hunting</div><div><svg class="i"><use href="#i-layers"/></svg>MITRE ATT&amp;CK</div><div><svg class="i"><use href="#i-user"/></svg>Authentication</div><div><svg class="i"><use href="#i-radar"/></svg>Network &amp; IPs</div><div><svg class="i"><use href="#i-file"/></svg>Integrity</div><div><svg class="i"><use href="#i-clip"/></svg>Configuration</div><div><svg class="i"><use href="#i-book"/></svg>Compliance</div>
+      </aside>
+      <div class="main">
+        <div class="mh"><span class="ic"><svg class="i"><use href="#i-shield"/></svg></span><div><b>Security center</b><small>every security module of this machine at a glance</small></div><span class="agent"><span class="chip g" style="padding:0 8px"><i></i>active</span>my-gaming-pc · 192.168.1.20 · 214 of 365 days</span></div>
+        <div class="kp">
+          <div class="k"><small>Total events</small><b>4,812</b><span>7 days</span></div>
+          <div class="k"><small>Critical</small><b style="color:var(--crit)">2</b><span>level 12+</span></div>
+          <div class="k"><small>High</small><b style="color:var(--serious)">9</b><span>level 10–11</span></div>
+          <div class="k"><small>Failed logons</small><b style="color:var(--warn)">57</b><span>auth failures</span></div>
+          <div class="k"><small>Remote IPs</small><b>312</b><span>4 inbound</span></div>
+          <div class="k"><small>Config score</small><b style="color:var(--good)">88%</b><span>3 failing</span></div>
+        </div>
+        <div class="row">
+          <div class="cardx"><h4>Alert level evolution</h4><svg id="bars" viewBox="0 0 700 150" preserveAspectRatio="none" style="width:100%;height:150px;display:block"></svg>
+            <div class="legend"><span><i style="background:var(--crit)"></i>Critical</span><span><i style="background:var(--serious)"></i>High</span><span><i style="background:var(--warn)"></i>Medium</span><span><i style="background:var(--s1)"></i>Low</span><span><i style="background:var(--faint)"></i>Info</span></div></div>
+          <div class="cardx"><h4>Alerts by severity</h4><div class="donut"><svg id="donut" viewBox="0 0 100 100"></svg><div class="dl" id="dleg"></div></div></div>
+        </div>
+        <div class="cardx" style="padding:0">
+          <div class="ev" style="--c:var(--crit)"><span class="lv">12</span><div><b>Successful logon after multiple failures</b><span>admin signed in from 203.0.113.45 after 7 failed attempts</span></div><em>2 min ago</em></div>
+          <div class="ev" style="--c:var(--serious)"><span class="lv">10</span><div><b>Port scan detected</b><span>198.51.100.23 probed 41 ports in 60 seconds</span></div><em>18 min ago</em></div>
+          <div class="ev" style="--c:var(--warn)"><span class="lv">8</span><div><b>Monitored file modified</b><span>hosts file: C:\Windows\System32\drivers\etc\hosts</span></div><em>1 h ago</em></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">Illustration with sample data. Every number on the real page comes from your machine.</p>
+</div></header>
+
+<section class="alt"><div class="wrap">
+  <div class="stats">
+    <div class="stat"><b>1</b><span>command: <code>node server.js</code></span></div>
+    <div class="stat"><b>0</b><span>npm dependencies</span></div>
+    <div class="stat"><b>11</b><span>SIEM modules</span></div>
+    <div class="stat"><b>70</b><span>detection rules, levels 0–15</span></div>
+    <div class="stat"><b>365</b><span>days of local history</span></div>
+    <div class="stat"><b>21</b><span>dashboard widgets</span></div>
+  </div>
+</div></section>
+
+<section id="features"><div class="wrap">
+  <div class="eyebrow">Monitor and control</div>
+  <h2>Replaces a dozen tools you keep open</h2>
+  <p class="sub">Task Manager, HWiNFO, an FPS counter, netstat, TCPView, Wireshark-lite network views, a port scanner and half of the Windows admin consoles, in one fast page that also works from your phone on the LAN.</p>
+  <div class="grid">
+    <div class="feat" style="--c:var(--s1)"><div class="fi"><svg class="i"><use href="#i-grid"/></svg></div><h3>Live dashboard</h3><p>21 widgets you drag, resize, add and remove: CPU per thread, GPU engines, memory, network, disks, temperatures, latency, FPS, top apps, open ports.</p></div>
+    <div class="feat" style="--c:var(--s7)"><div class="fi"><svg class="i"><use href="#i-activity"/></svg></div><h3>History up to a year</h3><p>Every metric over 15 minutes up to 1 year, kept on disk across restarts, with CSV export.</p></div>
+    <div class="feat" style="--c:var(--s3)"><div class="fi"><svg class="i"><use href="#i-list"/></svg></div><h3>Process control</h3><p>Tree and by-app views, live charts per process, loaded DLLs, end, end tree, suspend, priority, CPU affinity, SHA-256 + VirusTotal, block its network.</p></div>
+    <div class="feat" style="--c:var(--s2)"><div class="fi"><svg class="i"><use href="#i-thermo"/></svg></div><h3>Sensors and FPS</h3><p>Every temperature, fan, power rail, clock and voltage as live graphs, plus FPS, 1% lows and frame times for your games. No extra apps to install.</p></div>
+    <div class="feat" style="--c:var(--s1)"><div class="fi"><svg class="i"><use href="#i-globe"/></svg></div><h3>Network</h3><p>Connections with reverse DNS, listening ports flagged local or exposed, packets per second, ARP neighbors, routes, DNS cache, Wi-Fi, firewall profiles.</p></div>
+    <div class="feat" style="--c:var(--s5)"><div class="fi"><svg class="i"><use href="#i-flask"/></svg></div><h3>Net Lab</h3><p>Ping, traceroute, DNS lookup and benchmark, TCP port scanner with banners, TLS inspector, HTTP probe with header audit, LAN discovery, Wake-on-LAN.</p></div>
+    <div class="feat" style="--c:var(--s4)"><div class="fi"><svg class="i"><use href="#i-code"/></svg></div><h3>Dev and containers</h3><p>node, python, java, bun, deno and databases labelled by what they run (<code>next dev</code>, <code>vite</code>, <code>uvicorn</code>), health checks, Docker and Podman control and logs, WSL.</p></div>
+    <div class="feat" style="--c:var(--s6)"><div class="fi"><svg class="i"><use href="#i-wrench"/></svg></div><h3>Windows toolbox</h3><p>Event logs, installed apps, startup apps, scheduled tasks, drivers, updates, hosts editor, PATH doctor, disk usage, power plans, cleanup, firewall blocks.</p></div>
+    <div class="feat" style="--c:var(--s8)"><div class="fi"><svg class="i"><use href="#i-bell"/></svg></div><h3>Alerts and overlay</h3><p>Rules on 24 metrics with browser notifications and Discord / Slack / JSON webhooks, a change timeline, and a transparent OBS overlay.</p></div>
+  </div>
+</div></section>
+
+<section id="siem" class="alt"><div class="wrap">
+  <div class="eyebrow">New in 2.1</div>
+  <h2>A security center for one machine</h2>
+  <p class="sub">The modules, levels, ATT&amp;CK mapping and compliance views you know from Wazuh, built in, with no agents, no Elasticsearch and no server. Every security event gets a rule, a level from 0 to 15, groups, MITRE techniques and PCI DSS / GDPR / NIST / HIPAA tags, and is kept for a year in plain JSON files.</p>
+
+  <div class="cat">Security information management</div>
+  <div class="mods">
+    <div class="mod"><h4><svg class="i"><use href="#i-shield"/></svg>Security center</h4><p>Severity KPIs, alert level evolution, every module with its trend, top rules, addresses and techniques, data-source health.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-search"/></svg>Threat hunting</h4><p>Search with <code>ip:</code> <code>user:</code> <code>rule:</code> <code>mitre:</code> <code>level&gt;=7</code>, click field facets to drill in, expand any event to its raw JSON, export CSV / JSON.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-file"/></svg>Integrity monitoring</h4><p>Hosts file, startup folders, scheduled tasks, SSH keys and autostart registry keys, with SHA-256 before and after. Add your own folders.</p></div>
+  </div>
+  <div class="cat">Threat detection and response</div>
+  <div class="mods">
+    <div class="mod"><h4><svg class="i"><use href="#i-target"/></svg>MITRE ATT&amp;CK</h4><p>A tactics × techniques heat map. Click a technique for its events.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-fire"/></svg>Malware detection</h4><p>Defender detections, protection switched off, new exclusions, fake system processes, programs that ran for the first time.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-radar"/></svg>Network &amp; IPs</h4><p>Every remote address of the last year, inbound connections from the internet, port scans, optional threat-feed matching.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-ban"/></svg>Active response</h4><p>Block IPs and ranges for an hour, a day or forever, by hand or automatically after brute force and scans.</p></div>
+  </div>
+  <div class="cat">Auditing and policy monitoring</div>
+  <div class="mods">
+    <div class="mod"><h4><svg class="i"><use href="#i-user"/></svg>Authentication</h4><p>Sign-ins vs failures, failure reasons, logon types, live sessions with sign out, local accounts, who was signed in when.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-clip"/></svg>Configuration assessment</h4><p>26 CIS-inspired Windows checks (firewall, AV, UAC, RDP, SMBv1, BitLocker, LSA protection…) with a score, the reason and the fix.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-eye"/></svg>System auditing</h4><p>New accounts and admins, services and drivers, scheduled tasks, cleared logs, policy and firewall-rule changes, crashes.</p></div>
+    <div class="mod"><h4><svg class="i"><use href="#i-book"/></svg>Regulatory compliance</h4><p>PCI DSS, GDPR, NIST 800-53 and HIPAA requirement tiles with the events behind each one.</p></div>
+  </div>
+
+  <div class="two">
+    <div class="cardx" style="padding:16px"><h4 style="font-size:14px">ATT&amp;CK matrix (illustration)</h4><div class="mtx" id="mtx"></div></div>
+    <div>
+      <pre class="q"><span class="c"># threat hunting queries</span>
+group:brute_force
+ip:203.0.113.45 level&gt;=7
+mitre:T1110 user:admin
+rule:6005                <span class="c"># inbound from the internet</span>
+group:syscheck proc:setup.exe
+"defender exclusion"</pre>
+      <div class="comp"><span class="chip b"><i></i>PCI DSS</span><span class="chip b"><i></i>GDPR</span><span class="chip b"><i></i>NIST 800-53</span><span class="chip b"><i></i>HIPAA</span><span class="chip"><i></i>22 ATT&amp;CK techniques</span><span class="chip"><i></i>12 tactics</span></div>
+      <p style="color:var(--ink2);font-size:14px;margin:14px 0 0">Reads the Windows Security, System, Defender, Firewall, Remote Desktop and OpenSSH logs (journald or auth.log on Linux) and correlates brute force, success after failures, first logon from a new address and logons from the internet.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <div class="eyebrow">Install</div>
+  <h2>Running in a minute</h2>
+  <p class="sub">You need Node.js 18.15 or newer. On Windows the launcher offers to install it for you.</p>
+  <div class="steps">
+    <div class="step"><span class="n">OPTION 1 · EASIEST</span><h3>Double-click</h3><p>Download the ZIP, extract it, double-click <code>RigWatch.cmd</code> and click Yes on the admin prompt. Your browser opens the dashboard.</p><a class="btn primary" href="https://github.com/firas44/RigWatch/archive/refs/heads/main.zip" style="align-self:flex-start"><svg class="i"><use href="#i-download"/></svg>Download ZIP</a></div>
+    <div class="step"><span class="n">OPTION 2</span><h3>Terminal</h3><pre class="code">git clone https://github.com/firas44/RigWatch.git
+cd RigWatch
+node server.js</pre><p>Open http://localhost:3000. If the port is busy, RigWatch picks the next free one.</p></div>
+    <div class="step"><span class="n">OPTION 3</span><h3>One single file</h3><p>The whole app, UI included, in one JavaScript file.</p><pre class="code">node rigwatch.js</pre><a href="https://github.com/firas44/RigWatch/blob/main/dist/rigwatch.js">dist/rigwatch.js →</a></div>
+  </div>
+  <ol class="first">
+    <li><b>Downloads two helpers</b> from their official releases, pinned and verified by SHA-256: LibreHardwareMonitor (sensors) and Intel PresentMon (FPS).</li>
+    <li><b>Asks for admin once.</b> Needed for CPU sensors, FPS, the Security log and firewall blocks. Say no and everything else still works.</li>
+    <li><b>Loads 30 days of security history</b> from your event logs so the SIEM is useful from the first minute.</li>
+  </ol>
+</div></section>
+
+<section class="alt"><div class="wrap">
+  <div class="eyebrow">Platforms</div>
+  <h2>Works on the machine you have</h2>
+  <p class="sub">Windows is the deepest, built and tested end to end. Linux and macOS share the same UI and API.</p>
+  <div class="os">
+    <div class="osc"><h3>Windows 10 / 11</h3><div class="muted">full feature set</div><ul><li>Any GPU, per-process GPU use</li><li>Temperatures, fans, power, FPS</li><li>Full SIEM incl. Security log, sessions, firewall blocks</li><li>Services, startup apps, toolbox</li></ul></div>
+    <div class="osc"><h3>Linux</h3><div class="muted">run with sudo to see everything</div><ul><li>CPU, memory, disks, network, processes, ports</li><li>NVIDIA and AMD GPUs, hwmon sensors</li><li>SIEM from journald / auth.log, iptables blocks</li><li class="part">No FPS capture</li></ul></div>
+    <div class="osc"><h3>macOS</h3><div class="muted">built-in tools only</div><ul><li>CPU, memory, disks, network, processes, ports</li><li>Apple / AMD / Intel GPU</li><li>Configuration checks, file integrity, network SIEM</li><li class="part">No CPU temperatures or FPS</li></ul></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow">Privacy and safety</div>
+  <h2>Your data stays on your PC</h2>
+  <p class="sub">RigWatch is a local web app. It has no telemetry and no cloud.</p>
+  <div class="priv">
+    <div class="pv"><svg class="i"><use href="#i-lock"/></svg><div><h3>Local by default</h3><p>Listens on 127.0.0.1 only. On your LAN other devices get a read-only view; control needs a secret token link.</p></div></div>
+    <div class="pv"><svg class="i"><use href="#i-shield"/></svg><div><h3>Hardened web app</h3><p>DNS-rebinding protection, CSRF checks on every action, a strict Content-Security-Policy, secrets in command lines masked.</p></div></div>
+    <div class="pv"><svg class="i"><use href="#i-ban"/></svg><div><h3>Safe actions</h3><p>Refuses to kill core OS processes or itself, never blocks your gateway, DNS or trusted IPs, and logs every action it takes.</p></div></div>
+    <div class="pv"><svg class="i"><use href="#i-file"/></svg><div><h3>Plain files, light on disk</h3><p>History is JSON lines per day in your home folder, older days compressed, one year kept, capped at 256 MB.</p></div></div>
+  </div>
+</div></section>
+
+<section id="faq" class="alt"><div class="wrap">
+  <div class="eyebrow">FAQ</div>
+  <h2>Questions</h2>
+  <details><summary>Is it really zero dependencies?</summary><p>Yes. No npm install, no node_modules. RigWatch uses Node's standard library plus tools already on your OS (PowerShell, perf counters, /proc). The two optional helpers for sensors and FPS are downloaded from their official releases and checked by SHA-256.</p></details>
+  <details><summary>Is this a replacement for Wazuh?</summary><p>For one personal machine, it covers the same ideas: rule levels, MITRE ATT&amp;CK, file integrity, configuration assessment, compliance views and active response. It is not a multi-agent server for a fleet, and it does not use Wazuh's ruleset or code.</p></details>
+  <details><summary>Will it slow down my games?</summary><p>Typical cost on a 16-thread desktop is about 1% CPU and under 1 GB of RAM, most of it in the PowerShell helpers that read Windows counters and logs. You can pause live updates with one key, and the OBS overlay shows FPS without opening the full dashboard.</p></details>
+  <details><summary>Why does it ask for admin on Windows?</summary><p>Windows only lets administrators read CPU sensors, capture frames, read the Security log and add firewall rules. Click No and RigWatch still runs with everything that does not need admin. Prefer least privilege? Start it with <code>--no-elevate</code>.</p></details>
+  <details><summary>Does anything leave my machine?</summary><p>Only the two helper downloads on first run, a small latency probe (configurable or off), tools you run yourself, and, if you turn it on, a daily download of public threat lists. Nothing about you or your PC is sent.</p></details>
+  <details><summary>How do I report a bug?</summary><p>System → Collectors → Copy diagnostics (no host name, user name or paths), then open an issue on GitHub and paste it.</p></details>
+</div></section>
+
+<footer><div class="wrap">
+  <a class="brand" href="#"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--panel3)"/><path d="M4 18h6l3-8 5 14 3-6h7" fill="none" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>RigWatch</a>
+  <span>MIT license · <a href="https://github.com/firas44/RigWatch/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/firas44/RigWatch/issues">Issues</a></span>
+  <span>Sensors via LibreHardwareMonitor, FPS via Intel PresentMon (downloaded, not redistributed)</span>
+</div></footer>
+
+<script>
+// sample data for the illustration
+(function () {
+  var SEV = ['var(--faint)', 'var(--s1)', 'var(--warn)', 'var(--serious)', 'var(--crit)'];
+  var data = [[30,40,6,0,0],[26,52,9,1,0],[34,44,7,0,0],[28,61,12,2,0],[40,58,10,1,1],[22,39,5,0,0],[35,70,18,3,0],[31,48,8,1,0],[29,66,14,2,1],[38,55,11,0,0],[27,45,7,1,0],[33,73,16,2,0],[30,50,9,1,0],[36,62,13,2,1]];
+  var svg = document.getElementById('bars'), W = 700, H = 150, n = data.length, bw = W / n, mx = 0, s = '';
+  data.forEach(function (d) { var t = d.reduce(function (a, b) { return a + b; }, 0); if (t > mx) mx = t; });
+  for (var g = 1; g <= 3; g++) s += '<line x1="0" x2="' + W + '" y1="' + (H - g * H / 4) + '" y2="' + (H - g * H / 4) + '" stroke="var(--line)" vector-effect="non-scaling-stroke"/>';
+  data.forEach(function (d, i) { var y = H; for (var k = 0; k < 5; k++) { if (!d[k]) continue; var h = d[k] / mx * (H - 6); y -= h; s += '<rect x="' + (i * bw + 4) + '" y="' + y + '" width="' + (bw - 8) + '" height="' + h + '" fill="' + SEV[k] + '"/>'; } });
+  svg.innerHTML = s;
+  var dn = [['Critical', 2, 4], ['High', 9, 3], ['Medium', 164, 2], ['Low', 2802, 1], ['Info', 1835, 0]], tot = 0, off = 0, C = 2 * Math.PI * 40, c = '';
+  dn.forEach(function (x) { tot += x[1]; });
+  dn.forEach(function (x) { var len = Math.max(1.5, x[1] / tot * C); c += '<circle r="40" cx="50" cy="50" fill="none" stroke="' + SEV[x[2]] + '" stroke-width="13" stroke-dasharray="' + (len - 1) + ' ' + (C - len + 1) + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 50 50)"/>'; off += len; });
+  c += '<text x="50" y="53" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">4,812</text>';
+  document.getElementById('donut').innerHTML = c;
+  document.getElementById('dleg').innerHTML = dn.map(function (x) { return '<div><i style="background:' + SEV[x[2]] + '"></i>' + x[0] + '<b>' + x[1].toLocaleString() + '</b></div>'; }).join('');
+  var T = [['Initial Access', [['External Remote Services', 4], ['Valid Accounts', 2]]], ['Execution', [['User Execution', 6], ['Scheduled Task', 0]]], ['Persistence', [['Windows Service', 3], ['Run Keys / Startup', 1]]], ['Defense Evasion', [['Disable Firewall', 12], ['Clear Event Logs', 0]]], ['Credential Access', [['Brute Force', 57]]], ['Discovery', [['Network Service Discovery', 2]]]];
+  var mx2 = 57, m = '';
+  T.forEach(function (t) { m += '<div class="h">' + t[0] + '</div>'; });
+  for (var r = 0; r < 2; r++) T.forEach(function (t) { var x = t[1][r]; m += x ? '<div class="t" style="' + (x[1] ? 'background:color-mix(in srgb, var(--crit) ' + Math.round(14 + 60 * Math.sqrt(x[1] / mx2)) + '%, var(--panel2));color:var(--ink)' : 'opacity:.5') + '">' + x[0] + (x[1] ? ' · ' + x[1] : '') + '</div>' : '<div></div>'; });
+  document.getElementById('mtx').innerHTML = m;
+})();
+</script>
+</body>
+</html>
